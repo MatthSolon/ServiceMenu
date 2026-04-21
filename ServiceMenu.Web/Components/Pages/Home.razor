@@ -1,0 +1,106 @@
+﻿@page "/"
+@using ServiceMenu.Web.Models
+@using ServiceMenu.Web.Services
+@inject ApiClient ApiClient
+@inject CarrinhoState CarrinhoState
+@rendermode InteractiveServer
+
+<h2 class="mb-4">
+    <i class="bi bi-menu-button-wide me-2"></i>
+    Nosso Cardápio
+</h2>
+
+@if (_loading)
+{
+    <div class="text-center py-5">
+        <div class="spinner-border text-primary" role="status">
+            <span class="visually-hidden">Carregando...</span>
+        </div>
+        <p class="mt-3">Carregando cardápio...</p>
+    </div>
+}
+else
+{
+    <div class="row">
+        @foreach (var categoria in _cardapioAgrupado)
+        {
+            <div class="col-12 mb-4">
+                <h3 class="border-bottom pb-2 mb-3">
+                    <i class="@GetCategoriaIcon(categoria.Categoria) me-2"></i>
+                    @categoria.Categoria
+                </h3>
+
+                <div class="row">
+                    @foreach (var item in categoria.Itens)
+                    {
+                        <div class="col-md-6 col-lg-4 mb-3">
+                            <div class="card h-100 shadow-sm">
+                                <div class="card-body">
+                                    <div class="d-flex justify-content-between align-items-start">
+                                        <h5 class="card-title">@item.Nome</h5>
+                                        <span class="badge bg-success">R$ @item.Preco.ToString("F2")</span>
+                                    </div>
+                                </div>
+                                <div class="card-footer bg-white border-0 pb-3">
+                                    <button class="btn btn-primary w-100"
+                                            @onclick="() => AdicionarAoCarrinho(item.Id)">
+                                        <i class="bi bi-cart-plus me-2"></i>
+                                        Adicionar ao Carrinho
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    }
+                </div>
+            </div>
+        }
+    </div>
+}
+
+@if (_showToast)
+{
+    <div class="position-fixed bottom-0 end-0 p-3" style="z-index: 11">
+        <div class="toast show" role="alert">
+            <div class="toast-header bg-success text-white">
+                <i class="bi bi-check-circle me-2"></i>
+                <strong class="me-auto">Sucesso!</strong>
+                <button type="button" class="btn-close btn-close-white"
+                        @onclick="() => _showToast = false"></button>
+            </div>
+            <div class="toast-body">
+                Item adicionado ao carrinho!
+            </div>
+        </div>
+    </div>
+}
+
+@code {
+    private List<CardapioAgrupado> _cardapioAgrupado = new();
+    private bool _loading = true;
+    private bool _showToast = false;
+
+    protected override async Task OnInitializedAsync()
+    {
+        _cardapioAgrupado = await ApiClient.GetCardapioAgrupadoAsync();
+        _loading = false;
+    }
+
+    private string GetCategoriaIcon(string categoria)
+    {
+        return categoria switch
+        {
+            "Principal" => "bi bi-egg-fried",
+            "Acompanhamento" => "bi bi-basket",
+            "Bebida" => "bi bi-cup-straw",
+            _ => "bi bi-tag"
+        };
+    }
+
+    private async Task AdicionarAoCarrinho(int itemId)
+    {
+        CarrinhoState.AdicionarItem(itemId);
+        _showToast = true;
+        await Task.Delay(2000);
+        _showToast = false;
+    }
+}

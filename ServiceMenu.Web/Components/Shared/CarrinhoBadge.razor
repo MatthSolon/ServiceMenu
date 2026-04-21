@@ -1,0 +1,20 @@
+﻿@using ServiceMenu.Web.Services
+@inject CarrinhoState CarrinhoState
+@implements IDisposable
+
+@if (CarrinhoState.TotalItens > 0)
+{
+    <span class="badge bg-danger rounded-pill ms-1">@CarrinhoState.TotalItens</span>
+}
+
+@code {
+    protected override void OnInitialized()
+    {
+        CarrinhoState.OnChange += StateHasChanged;
+    }
+
+    public void Dispose()
+    {
+        CarrinhoState.OnChange -= StateHasChanged;
+    }
+}

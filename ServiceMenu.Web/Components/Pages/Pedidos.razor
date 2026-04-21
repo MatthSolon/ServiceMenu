@@ -1,0 +1,169 @@
+﻿@page "/pedidos"
+@page "/pedidos/{PedidoId:int}"
+@using ServiceMenu.Web.Models
+@using ServiceMenu.Web.Services
+@inject ApiClient ApiClient
+@rendermode InteractiveServer
+
+<h2 class="mb-4">
+    <i class="bi bi-list-ul me-2"></i>
+    @(PedidoId == null ? "Histórico de Pedidos" : $"Pedido #{PedidoId}")
+</h2>
+
+@if (_loading)
+{
+    <div class="text-center py-5">
+        <div class="spinner-border text-primary" role="status">
+            <span class="visually-hidden">Carregando...</span>
+        </div>
+    </div>
+}
+else if (PedidoId.HasValue)
+{
+    // Mostrar detalhes de um pedido específico
+    var pedido = _pedidoDetalhe;
+    if (pedido == null)
+    {
+        <div class="alert alert-warning">
+            <i class="bi bi-exclamation-triangle me-2"></i>
+            Pedido não encontrado
+        </div>
+    }
+    else
+    {
+        <div class="card shadow-sm mb-4">
+            <div class="card-header bg-primary text-white">
+                <div class="d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0">Pedido #{pedido.Id}</h5>
+                    <span>@pedido.DataCriacao.ToString("dd/MM/yyyy HH:mm")</span>
+                </div>
+            </div>
+            <div class="card-body">
+                <h6 class="mb-3">Itens do Pedido</h6>
+
+                @foreach (var item in pedido.Itens)
+                {
+                    <div class="d-flex justify-content-between align-items-center mb-2 pb-2 border-bottom">
+                        <div>
+                            <strong>@item.Nome</strong>
+                            <br>
+                            <small class="text-muted">@item.Categoria</small>
+                        </div>
+                        <div class="text-end">
+                            <div>@item.Quantidade x R$ @item.PrecoUnitario.ToString("F2")</div>
+                            <strong>R$ @((item.Quantidade * item.PrecoUnitario).ToString("F2"))</strong>
+                        </div>
+                    </div>
+                }
+
+                <div class="mt-4">
+                    <div class="d-flex justify-content-between">
+                        <span>Subtotal:</span>
+                        <span>R$ @pedido.Subtotal.ToString("F2")</span>
+                    </div>
+
+                    @if (pedido.Desconto > 0)
+                    {
+                        <div class="d-flex justify-content-between text-success">
+                            <span>Desconto:</span>
+                            <span>- R$ @pedido.Desconto.ToString("F2")</span>
+                        </div>
+                    }
+
+                    <hr>
+
+                    <div class="d-flex justify-content-between">
+                        <strong class="h5">Total:</strong>
+                        <strong class="h5 text-primary">R$ @pedido.Total.ToString("F2")</strong>
+                    </div>
+                </div>
+            </div>
+            <div class="card-footer">
+                <a href="/pedidos" class="btn btn-secondary">
+                    <i class="bi bi-arrow-left me-2"></i>
+                    Voltar para Lista
+                </a>
+            </div>
+        </div>
+    }
+}
+else
+{
+    // Mostrar lista de pedidos
+    if (!_pedidos.Any())
+    {
+        <div class="text-center py-5">
+            <i class="bi bi-inbox display-1 text-muted"></i>
+            <h3 class="mt-3">Nenhum pedido encontrado</h3>
+            <p class="text-muted">Faça seu primeiro pedido!</p>
+            <a href="/" class="btn btn-primary mt-3">
+                <i class="bi bi-shop me-2"></i>
+                Ver Cardápio
+            </a>
+        </div>
+    }
+    else
+    {
+        <div class="row">
+            @foreach (var pedido in _pedidos.OrderByDescending(p => p.DataCriacao))
+            {
+                <div class="col-md-6 col-lg-4 mb-3">
+                    <div class="card shadow-sm h-100">
+                        <div class="card-body">
+                            <div class="d-flex justify-content-between align-items-start mb-3">
+                                <h5 class="card-title">Pedido #{pedido.Id}</h5>
+                                <span class="badge bg-success">R$ @pedido.Total.ToString("F2")</span>
+                            </div>
+
+                            <p class="card-text">
+                                <small class="text-muted">
+                                    <i class="bi bi-calendar me-1"></i>
+                                    @pedido.DataCriacao.ToString("dd/MM/yyyy HH:mm")
+                                </small>
+                            </p>
+
+                            <p class="card-text">
+                                <i class="bi bi-bag me-1"></i>
+                                @pedido.Itens.Count item(s)
+                            </p>
+
+                            <div class="mt-3">
+                                <a href="/pedidos/@pedido.Id" class="btn btn-outline-primary w-100">
+                                    <i class="bi bi-eye me-2"></i>
+                                    Ver Detalhes
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            }
+        </div>
+    }
+}
+
+@code {
+    [Parameter] public int? PedidoId { get; set; }
+
+    private List<Pedido> _pedidos = new();
+    private Pedido? _pedidoDetalhe;
+    private bool _loading = true;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await CarregarDados();
+    }
+
+    protected override async Task OnParametersSetAsync()
+    {
+        if (PedidoId.HasValue)
+        {
+            _pedidoDetalhe = await ApiClient.GetPedidoAsync(PedidoId.Value);
+        }
+    }
+
+    private async Task CarregarDados()
+    {
+        _pedidos = await ApiClient.GetPedidosAsync();
+        _loading = false;
+    }
+}

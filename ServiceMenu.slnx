@@ -1,0 +1,6 @@
+<Solution>
+  <Project Path="ServiceMenu.ApiService/ServiceMenu.ApiService.csproj" />
+  <Project Path="ServiceMenu.AppHost/ServiceMenu.AppHost.csproj" />
+  <Project Path="ServiceMenu.ServiceDefaults/ServiceMenu.ServiceDefaults.csproj" />
+  <Project Path="ServiceMenu.Web/ServiceMenu.Web.csproj" />
+</Solution>

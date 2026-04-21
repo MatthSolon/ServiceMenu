@@ -1,0 +1,220 @@
+﻿@page "/carrinho"
+@using ServiceMenu.Web.Models
+@using ServiceMenu.Web.Services
+@inject ApiClient ApiClient
+@inject CarrinhoState CarrinhoState
+@inject NavigationManager Navigation
+@rendermode InteractiveServer
+
+<h2 class="mb-4">
+    <i class="bi bi-cart3 me-2"></i>
+    Seu Carrinho
+</h2>
+
+@if (_loading)
+{
+    <div class="text-center py-5">
+        <div class="spinner-border text-primary" role="status">
+            <span class="visually-hidden">Carregando...</span>
+        </div>
+    </div>
+}
+else if (!CarrinhoState.Itens.Any())
+{
+    <div class="text-center py-5">
+        <i class="bi bi-cart-x display-1 text-muted"></i>
+        <h3 class="mt-3">Seu carrinho está vazio</h3>
+        <p class="text-muted">Adicione itens do cardápio para continuar!</p>
+        <a href="/" class="btn btn-primary mt-3">
+            <i class="bi bi-shop me-2"></i>
+            Ver Cardápio
+        </a>
+    </div>
+}
+else
+{
+    <div class="row">
+        <div class="col-lg-8">
+            <div class="card shadow-sm">
+                <div class="card-body">
+                    <h5 class="card-title mb-3">Itens do Pedido</h5>
+
+                    @foreach (var itemCarrinho in CarrinhoState.Itens)
+                    {
+                        var item = _cardapio.FirstOrDefault(i => i.Id == itemCarrinho.ItemCardapioId);
+                        if (item == null) continue;
+
+                        <div class="d-flex align-items-center mb-3 pb-3 border-bottom">
+                            <div class="flex-grow-1">
+                                <h6 class="mb-1">@item.Nome</h6>
+                                <div class="mt-2">
+                                    <span class="badge bg-secondary">@item.Categoria</span>
+                                </div>
+                            </div>
+
+                            <div class="d-flex align-items-center gap-3">
+                                <div class="input-group input-group-sm" style="width: 120px;">
+                                    <button class="btn btn-outline-secondary" type="button"
+                                            @onclick="() => AtualizarQuantidade(item.Id, itemCarrinho.Quantidade - 1)">
+                                        <i class="bi bi-dash"></i>
+                                    </button>
+                                    <input type="number" class="form-control text-center"
+                                           value="@itemCarrinho.Quantidade" readonly>
+                                    <button class="btn btn-outline-secondary" type="button"
+                                            @onclick="() => AtualizarQuantidade(item.Id, itemCarrinho.Quantidade + 1)">
+                                        <i class="bi bi-plus"></i>
+                                    </button>
+                                </div>
+
+                                <div style="min-width: 80px; text-align: right;">
+                                    <strong>R$ @((item.Preco * itemCarrinho.Quantidade).ToString("F2"))</strong>
+                                    <br>
+                                    <small class="text-muted">R$ @item.Preco.ToString("F2") cada</small>
+                                </div>
+
+                                <button class="btn btn-outline-danger btn-sm"
+                                        @onclick="() => RemoverItem(item.Id)">
+                                    <i class="bi bi-trash"></i>
+                                </button>
+                            </div>
+                        </div>
+                    }
+
+                    <button class="btn btn-outline-secondary" @onclick="() => CarrinhoState.LimparCarrinho()">
+                        <i class="bi bi-trash me-2"></i>
+                        Limpar Carrinho
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-4">
+            <div class="card shadow-sm">
+                <div class="card-body">
+                    <h5 class="card-title mb-3">Resumo do Pedido</h5>
+
+                    <div class="d-flex justify-content-between mb-2">
+                        <span>Subtotal:</span>
+                        <strong>R$ @CalcularSubtotal().ToString("F2")</strong>
+                    </div>
+
+                    <div class="d-flex justify-content-between mb-2 text-success">
+                        <span>Desconto estimado:</span>
+                        <strong>- R$ @CalcularDescontoEstimado().ToString("F2")</strong>
+                    </div>
+
+                    <hr>
+
+                    <div class="d-flex justify-content-between mb-3">
+                        <span class="h5">Total estimado:</span>
+                        <strong class="h5 text-primary">R$ @((CalcularSubtotal() - CalcularDescontoEstimado()).ToString("F2"))</strong>
+                    </div>
+
+                    <button class="btn btn-success w-100" @onclick="FinalizarPedido" disabled="@_finalizando">
+                        @if (_finalizando)
+                        {
+                            <span class="spinner-border spinner-border-sm me-2"></span>
+                            <span>Processando...</span>
+                        }
+                        else
+                        {
+                            <span>
+                                <i class="bi bi-check-circle me-2"></i>
+                                Finalizar Pedido
+                            </span>
+                        }
+                    </button>
+
+                    @if (!string.IsNullOrEmpty(_erro))
+                    {
+                        <div class="alert alert-danger mt-3">
+                            <i class="bi bi-exclamation-triangle me-2"></i>
+                            @_erro
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
+}
+
+@code {
+    private List<ItemCardapio> _cardapio = new();
+    private bool _loading = true;
+    private bool _finalizando = false;
+    private string _erro = string.Empty;
+
+    protected override async Task OnInitializedAsync()
+    {
+        _cardapio = await ApiClient.GetCardapioAsync();
+        _loading = false;
+    }
+
+    private decimal CalcularSubtotal()
+    {
+        return CarrinhoState.Itens.Sum(i =>
+        {
+            var item = _cardapio.FirstOrDefault(c => c.Id == i.ItemCardapioId);
+            return item?.Preco * i.Quantidade ?? 0;
+        });
+    }
+
+    private decimal CalcularDescontoEstimado()
+    {
+        var itens = CarrinhoState.Itens.Select(i => new
+        {
+            Item = _cardapio.FirstOrDefault(c => c.Id == i.ItemCardapioId),
+            Quantidade = i.Quantidade
+        }).Where(x => x.Item != null).ToList();
+
+        var temPrincipal = itens.Any(i => i.Item?.Categoria == CategoriaItem.Principal);
+        var temAcompanhamento = itens.Any(i => i.Item?.Categoria == CategoriaItem.Acompanhamento);
+        var temBebida = itens.Any(i => i.Item?.Categoria == CategoriaItem.Bebida);
+
+        var subtotal = CalcularSubtotal();
+
+        return (temPrincipal, temAcompanhamento, temBebida) switch
+        {
+            (true, true, true) => subtotal * 0.20m,
+            (true, false, true) => subtotal * 0.15m,
+            (true, true, false) => subtotal * 0.10m,
+            _ => 0
+        };
+    }
+
+    private void AtualizarQuantidade(int itemId, int quantidade)
+    {
+        if (quantidade <= 0)
+            RemoverItem(itemId);
+        else
+            CarrinhoState.AtualizarQuantidade(itemId, quantidade);
+    }
+
+    private void RemoverItem(int itemId)
+    {
+        CarrinhoState.RemoverItem(itemId);
+    }
+
+    private async Task FinalizarPedido()
+    {
+        _finalizando = true;
+        _erro = string.Empty;
+
+        try
+        {
+            var pedido = new CriarPedidoDTO { Itens = CarrinhoState.Itens };
+            var resultado = await ApiClient.CriarPedidoAsync(pedido);
+
+            CarrinhoState.LimparCarrinho();
+            Navigation.NavigateTo($"/pedidos/{resultado.Id}");
+        }
+        catch (Exception ex)
+        {
+            _erro = ex.Message;
+        }
+        finally
+        {
+            _finalizando = false;
+        }
+    }
+}
