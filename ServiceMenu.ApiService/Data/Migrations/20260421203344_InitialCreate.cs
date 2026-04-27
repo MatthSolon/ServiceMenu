@@ -77,8 +77,6 @@ namespace ServiceMenu.ApiService.Data.Migrations
                     { 3, "Principal", "X Bacon", 7.00m },
                     { 4, "Acompanhamento", "Batata frita", 2.00m },
                     { 5, "Bebida", "Refrigerante", 2.50m },
-                    { 6, "Acompanhamento", "Onion rings", 3.00m },
-                    { 7, "Bebida", "Suco natural", 4.00m }
                 });
 
             migrationBuilder.CreateIndex(

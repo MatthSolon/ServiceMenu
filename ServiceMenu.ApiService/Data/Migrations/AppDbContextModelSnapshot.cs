@@ -79,24 +79,10 @@ namespace ServiceMenu.ApiService.Data.Migrations
                         },
                         new
                         {
-                            Id = 6,
-                            Categoria = "Acompanhamento",
-                            Nome = "Onion rings",
-                            Preco = 3.00m
-                        },
-                        new
-                        {
                             Id = 5,
                             Categoria = "Bebida",
                             Nome = "Refrigerante",
                             Preco = 2.50m
-                        },
-                        new
-                        {
-                            Id = 7,
-                            Categoria = "Bebida",
-                            Nome = "Suco natural",
-                            Preco = 4.00m
                         });
                 });
 

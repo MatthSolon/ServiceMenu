@@ -1,4 +1,4 @@
-﻿namespace ServiceMenu.ApiService.Model
+﻿amespace ServiceMenu.ApiService.Model
 {
     public class Item
     {

@@ -7,6 +7,11 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <Compile Remove="Model\Categoria.cs" />
+    <Compile Remove="Model\Item.cs" />
+  </ItemGroup>
+
+  <ItemGroup>
     <ProjectReference Include="..\ServiceMenu.ServiceDefaults\ServiceMenu.ServiceDefaults.csproj" />
   </ItemGroup>
 

@@ -6,15 +6,25 @@ namespace ServiceMenu.Web.Services
     {
         public List<ItemPedidoDTO> Itens { get; private set; } = new();
         public event Action? OnChange;
-
-        public void AdicionarItem(int itemId, int quantidade = 1)
+        private string _errorMessage = string.Empty;
+        public string ErrorMessage => _errorMessage;
+        public void AdicionarItem(int itemId, string categoria, int quantidade = 1)
         {
-            var itemExistente = Itens.FirstOrDefault(i => i.ItemCardapioId == itemId);
+            var itemExistente = Itens.FirstOrDefault(i => i.Categoria.ToString() == categoria);
 
             if (itemExistente != null)
-                itemExistente.Quantidade += quantidade;
+            {
+                _errorMessage = "Este item já foi adicionado ao pedido, mas pertence a uma categoria diferente. Remova o item existente para adicionar este.";
+            }
+            else if (itemExistente?.Categoria == Enum.Parse<CategoriaItem>(categoria.ToString()))
+            {
+                _errorMessage = "Algum item da mesma categoria já foi adicionado ao pedido, mas pertence a uma categoria diferente. Remova o item existente para adicionar este.";
+            }
             else
-                Itens.Add(new ItemPedidoDTO { ItemCardapioId = itemId, Quantidade = quantidade });
+            {
+                Itens.Add(new ItemPedidoDTO { ItemCardapioId = itemId, Quantidade = quantidade, Categoria = Enum.Parse<CategoriaItem>(categoria.ToString()) });
+            }
+
 
             NotifyStateChanged();
         }
@@ -44,5 +54,11 @@ namespace ServiceMenu.Web.Services
         public int TotalItens => Itens.Sum(i => i.Quantidade);
 
         private void NotifyStateChanged() => OnChange?.Invoke();
+        public void ClearErrorMessage()
+        {
+            _errorMessage = string.Empty;
+            NotifyStateChanged();
+        }
     }
+
 }

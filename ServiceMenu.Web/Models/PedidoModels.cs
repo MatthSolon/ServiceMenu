@@ -7,6 +7,7 @@
     {
         public int ItemCardapioId { get; set; }
         public int Quantidade { get; set; } = 1;
+        public CategoriaItem Categoria { get; set; }
     }
 
     public class CriarPedidoDTO

@@ -93,13 +93,6 @@ public class AppDbContext : DbContext
                 Preco = 2.00m,
                 Categoria = CategoriaItem.Acompanhamento,
             },
-            new ItemCardapio
-            {
-                Id = 6,
-                Nome = "Onion rings",
-                Preco = 3.00m,
-                Categoria = CategoriaItem.Acompanhamento,
-            },
 
             // Bebidas
             new ItemCardapio
@@ -107,13 +100,6 @@ public class AppDbContext : DbContext
                 Id = 5,
                 Nome = "Refrigerante",
                 Preco = 2.50m,
-                Categoria = CategoriaItem.Bebida,
-            },
-            new ItemCardapio
-            {
-                Id = 7,
-                Nome = "Suco natural",
-                Preco = 4.00m,
                 Categoria = CategoriaItem.Bebida,
             }
         );
